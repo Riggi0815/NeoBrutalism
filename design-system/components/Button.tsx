@@ -18,10 +18,22 @@ export type ButtonVariant =
 
 export type ButtonSize = "sm" | "md" | "lg" | "icon";
 
-export interface ButtonProps
-  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
+/**
+ * How big the hard shadow is. "raised" (default) is the normal button shadow
+ * (--offset-raised). "control" is the smaller checkbox/switch level
+ * (--offset-control) for small, dense buttons like a number pad. "none" drops
+ * the shadow entirely (same look as a disabled button, but still active).
+ */
+export type ButtonShadow = "raised" | "control" | "none";
+
+export interface ButtonProps extends Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  "children"
+> {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  /** Hard-shadow depth; see ButtonShadow. Default "raised". */
+  shadow?: ButtonShadow;
   /** Replaces the content with a spinner + "Loading" and disables the button. */
   loading?: boolean;
   /** Rendered at 16x16, before the label. Ignored for size="icon" (the
@@ -30,14 +42,23 @@ export interface ButtonProps
   children?: ReactNode;
 }
 
-/** Hard-shadow offset for all buttons, per spec (x=4 y=4). Also the
- * distance the surface travels on `:active` so it lands exactly on top
- * of the shadow layer, hiding it — the "pressed flat" look. */
-const SHADOW_OFFSET = "raised";
+/**
+ * Hover/active motion per shadow level: on hover the surface lifts away from
+ * the shadow (revealing more of it); on :active it lands exactly on the
+ * shadow's offset, hiding it — the "pressed flat" look. The literal class
+ * strings must be complete so Tailwind generates them.
+ */
+const SHADOW_PRESS: Record<"raised" | "control", string> = {
+  raised:
+    "hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-(--offset-raised-x) active:translate-y-(--offset-raised-y)",
+  control:
+    "hover:-translate-x-px hover:-translate-y-px active:translate-x-(--offset-control-x) active:translate-y-(--offset-control-y)",
+};
 
 const VARIANT_SURFACE_CLASSES: Record<ButtonVariant, string> = {
   primary: "bg-primary border-2 border-foreground text-primary-foreground",
-  secondary: "bg-secondary border-2 border-foreground text-secondary-foreground",
+  secondary:
+    "bg-secondary border-2 border-foreground text-secondary-foreground",
   accent: "bg-accent border-2 border-foreground text-accent-foreground",
   // Dark red with white text (6.2:1) — deliberately far from primary, so a
   // delete action never looks like the normal main action.
@@ -87,6 +108,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     {
       variant = "primary",
       size = "md",
+      shadow = "raised",
       loading = false,
       icon,
       children,
@@ -103,7 +125,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     // its variant color and shadow — it's an in-progress action, not an
     // inactive one.
     const dimmed = Boolean(disabled);
-    const hasShadow = HAS_SHADOW[variant] && !dimmed;
+    const hasShadow = HAS_SHADOW[variant] && !dimmed && shadow !== "none";
+    const shadowLevel = shadow === "none" ? "raised" : shadow;
 
     return (
       <button
@@ -124,7 +147,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             aria-hidden="true"
             className="absolute inset-0 rounded-brutal bg-shadow"
             style={{
-              transform: `translate(var(--offset-${SHADOW_OFFSET}-x), var(--offset-${SHADOW_OFFSET}-y))`,
+              transform: `translate(var(--offset-${shadowLevel}-x), var(--offset-${shadowLevel}-y))`,
             }}
           />
         )}
@@ -138,9 +161,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             isIconOnly
               ? "h-11 w-11 shrink-0"
               : SIZE_CLASSES[size as Exclude<ButtonSize, "icon">],
-            hasShadow &&
-              !isDisabled &&
-              "hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-(--offset-raised-x) active:translate-y-(--offset-raised-y)",
+            hasShadow && !isDisabled && SHADOW_PRESS[shadowLevel],
             variant === "ghost" &&
               !isDisabled &&
               "hover:bg-foreground/5 active:bg-foreground/10",
@@ -148,7 +169,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         >
           {loading ? (
             <>
-              <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
+              <Loader2
+                className="h-4 w-4 shrink-0 animate-spin"
+                aria-hidden="true"
+              />
               {!isIconOnly && <span>Loading</span>}
             </>
           ) : (
@@ -170,12 +194,16 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   },
 );
 
-export interface ButtonLinkProps
-  extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "children"> {
+export interface ButtonLinkProps extends Omit<
+  AnchorHTMLAttributes<HTMLAnchorElement>,
+  "children"
+> {
   /** Where the link goes. Required — a link without a target is a button. */
   href: string;
   variant?: ButtonVariant;
   size?: ButtonSize;
+  /** Hard-shadow depth; see ButtonShadow. Default "raised". */
+  shadow?: ButtonShadow;
   /** Rendered at 16x16, before the label. With size="icon" it IS the
    * content — then give the link an `aria-label`. */
   icon?: ReactNode;
@@ -210,6 +238,7 @@ export function ButtonLink({
   href,
   variant = "primary",
   size = "md",
+  shadow = "raised",
   icon,
   children,
   className,
@@ -219,7 +248,8 @@ export function ButtonLink({
   ...props
 }: ButtonLinkProps) {
   const isIconOnly = size === "icon";
-  const hasShadow = HAS_SHADOW[variant];
+  const hasShadow = HAS_SHADOW[variant] && shadow !== "none";
+  const shadowLevel = shadow === "none" ? "raised" : shadow;
 
   return (
     <Tag
@@ -238,7 +268,7 @@ export function ButtonLink({
           aria-hidden="true"
           className="absolute inset-0 rounded-brutal bg-shadow"
           style={{
-            transform: `translate(var(--offset-${SHADOW_OFFSET}-x), var(--offset-${SHADOW_OFFSET}-y))`,
+            transform: `translate(var(--offset-${shadowLevel}-x), var(--offset-${shadowLevel}-y))`,
           }}
         />
       )}
@@ -250,7 +280,9 @@ export function ButtonLink({
             ? "h-11 w-11 shrink-0"
             : SIZE_CLASSES[size as Exclude<ButtonSize, "icon">],
           hasShadow &&
-            "group-hover:-translate-x-0.5 group-hover:-translate-y-0.5 group-active:translate-x-(--offset-raised-x) group-active:translate-y-(--offset-raised-y)",
+            (shadowLevel === "control"
+              ? "group-hover:-translate-x-px group-hover:-translate-y-px group-active:translate-x-(--offset-control-x) group-active:translate-y-(--offset-control-y)"
+              : "group-hover:-translate-x-0.5 group-hover:-translate-y-0.5 group-active:translate-x-(--offset-raised-x) group-active:translate-y-(--offset-raised-y)"),
           variant === "ghost" &&
             "group-hover:bg-foreground/5 group-active:bg-foreground/10",
         )}
