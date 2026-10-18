@@ -1,20 +1,17 @@
 {
-  "name": "@neo-brutalism/design-system",
-  "version": "0.1.0",
+  "name": "@rick/design-system",
+  "version": "0.1.1",
   "private": true,
-  "description": "Neo-Brutalism Component Library",
+  "description": "Neo-Brutalism Component Library (Emaille)",
   "type": "module",
   "exports": {
-    ".": "./components/index.ts",
-    "./tokens.css": "./tokens.css",
-    "./utils": "./utils.ts"
+    ".": "./design-system/components/index.ts",
+    "./tokens.css": "./design-system/tokens.css",
+    "./utils": "./design-system/utils.ts"
   },
   "files": [
-    "components",
-    "fonts",
-    "tokens.css",
-    "utils.ts",
-    "WIKI.md"
+    "design-system",
+    "!design-system/demos"
   ],
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.21",
