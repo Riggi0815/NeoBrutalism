@@ -34,6 +34,13 @@ export interface ButtonProps extends Omit<
   size?: ButtonSize;
   /** Hard-shadow depth; see ButtonShadow. Default "raised". */
   shadow?: ButtonShadow;
+  /**
+   * Full-width: the button fills its container's width. Face AND shadow stretch
+   * together (the face becomes `flex w-full` instead of content-width
+   * `inline-flex`), so the hard shadow stays aligned. Use it to make several
+   * buttons equal width — e.g. a column of buttons. Default false.
+   */
+  block?: boolean;
   /** Replaces the content with a spinner + "Loading" and disables the button. */
   loading?: boolean;
   /** Rendered at 16x16, before the label. Ignored for size="icon" (the
@@ -109,6 +116,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       variant = "primary",
       size = "md",
       shadow = "raised",
+      block = false,
       loading = false,
       icon,
       children,
@@ -135,7 +143,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={isDisabled}
         aria-busy={loading || undefined}
         className={cn(
-          "relative inline-block rounded-brutal",
+          "relative rounded-brutal",
+          block ? "block w-full" : "inline-block",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           isDisabled ? "cursor-not-allowed" : "cursor-pointer",
           className,
@@ -153,13 +162,16 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         )}
         <span
           className={cn(
-            "relative inline-flex select-none items-center justify-center whitespace-nowrap rounded-brutal font-bold transition-transform duration-100 ease-out",
+            block ? "relative flex w-full" : "relative inline-flex",
+            "select-none items-center justify-center whitespace-nowrap rounded-brutal font-bold transition-transform duration-100 ease-out",
             dimmed && variant !== "ghost"
               ? DISABLED_SURFACE
               : VARIANT_SURFACE_CLASSES[variant],
             dimmed && variant === "ghost" && "text-disabled-foreground",
             isIconOnly
-              ? "h-11 w-11 shrink-0"
+              ? block
+                ? "h-11 w-full"
+                : "h-11 w-11 shrink-0"
               : SIZE_CLASSES[size as Exclude<ButtonSize, "icon">],
             hasShadow && !isDisabled && SHADOW_PRESS[shadowLevel],
             variant === "ghost" &&
@@ -204,6 +216,8 @@ export interface ButtonLinkProps extends Omit<
   size?: ButtonSize;
   /** Hard-shadow depth; see ButtonShadow. Default "raised". */
   shadow?: ButtonShadow;
+  /** Full-width: fills the container, face and shadow stretch together. Default false. */
+  block?: boolean;
   /** Rendered at 16x16, before the label. With size="icon" it IS the
    * content — then give the link an `aria-label`. */
   icon?: ReactNode;
@@ -239,6 +253,7 @@ export function ButtonLink({
   variant = "primary",
   size = "md",
   shadow = "raised",
+  block = false,
   icon,
   children,
   className,
@@ -257,7 +272,8 @@ export function ButtonLink({
       target={target}
       rel={rel ?? (target === "_blank" ? "noopener noreferrer" : undefined)}
       className={cn(
-        "group relative inline-block rounded-brutal no-underline",
+        "group relative rounded-brutal no-underline",
+        block ? "block w-full" : "inline-block",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         className,
       )}
@@ -274,10 +290,13 @@ export function ButtonLink({
       )}
       <span
         className={cn(
-          "relative inline-flex select-none items-center justify-center whitespace-nowrap rounded-brutal font-bold transition-transform duration-100 ease-out motion-reduce:transition-none",
+          block ? "relative flex w-full" : "relative inline-flex",
+          "select-none items-center justify-center whitespace-nowrap rounded-brutal font-bold transition-transform duration-100 ease-out motion-reduce:transition-none",
           VARIANT_SURFACE_CLASSES[variant],
           isIconOnly
-            ? "h-11 w-11 shrink-0"
+            ? block
+              ? "h-11 w-full"
+              : "h-11 w-11 shrink-0"
             : SIZE_CLASSES[size as Exclude<ButtonSize, "icon">],
           hasShadow &&
             (shadowLevel === "control"
